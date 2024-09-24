@@ -1,5 +1,4 @@
-#include <iostream>
-#include <vector>
+#include <bits/stdc++.h>
 using namespace std;
 
 struct TestCase {
@@ -10,44 +9,37 @@ struct TestCase {
     string expectedOutcome;
 };
 
-bool solve(vector<int>& powerOfEnemies, int initialPower, int enemyNo, int currPower, int skips, int recharge) {
-    if (enemyNo >= powerOfEnemies.size()) {
-        return true;
-    }
-    if (currPower >= powerOfEnemies[enemyNo]) {
-        // fight
-        bool ans1 = solve(powerOfEnemies, initialPower, enemyNo + 1, currPower - powerOfEnemies[enemyNo], skips, recharge);
-        bool ans2 = false;
-        if (skips > 0)
-            ans2 = solve(powerOfEnemies, initialPower, enemyNo + 1, currPower, skips - 1, recharge);
-        return ans1 || ans2;
-    } else if (initialPower > powerOfEnemies[enemyNo]) {
-        bool ans1 = false, ans2 = false;
-        if (recharge > 0)
-            // recharge and fight
-            ans1 = solve(powerOfEnemies, initialPower, enemyNo + 1, initialPower - powerOfEnemies[enemyNo], skips, recharge - 1);
-        if (skips > 0)
-            // skip
-            ans2 = solve(powerOfEnemies, initialPower, enemyNo + 1, currPower, skips - 1, recharge);
-        return ans1 || ans2;
-    } else {
-        if (skips > 0)
-            // skip
-            return solve(powerOfEnemies, initialPower, enemyNo + 1, currPower, skips - 1, recharge);
-        else
-            return false;
-    }
-}
+bool canDefeatAllEnemies(vector<int>& powerOfEnemies, int initialPower, int maxSkips, int maxRecharge) {
 
-bool chakravyuh(vector<int>& powerOfEnemies, int initialPower, int skips, int recharge) {
-    if (skips >= powerOfEnemies.size()) {
-        // abhimanyu can skip all the enemies
-        return true;
-    }
-    powerOfEnemies[3] += powerOfEnemies[2] / 2;
-    powerOfEnemies[7] += powerOfEnemies[6] / 2;
+    vector<int> enemies = powerOfEnemies;
+    enemies[3] += enemies[2] / 2;
+    enemies[7] += enemies[6] / 2;
 
-    return solve(powerOfEnemies, initialPower, 0, initialPower, skips, recharge);
+    queue<tuple<int, int, int, int>> q;
+    q.push(make_tuple(0, initialPower, maxSkips, maxRecharge));
+
+    while (!q.empty()) {
+        auto [enemyIndex, currPower, skipsLeft, rechargeLeft] = q.front();
+        q.pop();
+
+        if (enemyIndex >= enemies.size()) {
+            return true;
+        }
+
+        if (currPower >= enemies[enemyIndex]) {
+            q.push(make_tuple(enemyIndex + 1, currPower - enemies[enemyIndex], skipsLeft, rechargeLeft));
+        }
+
+        if (skipsLeft > 0) {
+            q.push(make_tuple(enemyIndex + 1, currPower, skipsLeft - 1, rechargeLeft));
+        }
+
+        if (rechargeLeft > 0 && currPower < enemies[enemyIndex]) {
+            q.push(make_tuple(enemyIndex + 1, initialPower - enemies[enemyIndex], skipsLeft, rechargeLeft - 1));
+        }
+    }
+
+    return false;
 }
 
 int main() {
@@ -65,7 +57,7 @@ int main() {
     };
 
     for (auto& testCase : testCases) {
-        bool result = chakravyuh(testCase.powerOfEnemies, testCase.power, testCase.skips, testCase.recharge);
+        bool result = canDefeatAllEnemies(testCase.powerOfEnemies, testCase.power, testCase.skips, testCase.recharge);
         cout << (result ? "Yes" : "No") << " (Expected: " << testCase.expectedOutcome << ")" << endl;
     }
 
